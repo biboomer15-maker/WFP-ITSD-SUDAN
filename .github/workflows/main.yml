@@ -1,4 +1,3 @@
-
 name: Flutter Build APK
 
 on:
@@ -17,7 +16,10 @@ jobs:
 
       - name: Unzip Source Code
         run: |
-          unzip -q "wfp_it_app (1).zip" -d .
+          unzip -q "wfp_it_app (1).zip" -d extracted_code
+          # البحث عن المجلد الذي يحتوي على ملف pubspec.yaml والتحرك إليه
+          PROJECT_DIR=$(find extracted_code -name "pubspec.yaml" -exec dirname {} \;)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
           
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -31,13 +33,19 @@ jobs:
           channel: 'stable'
 
       - name: Get Dependencies
-        run: flutter pub get
+        run: |
+          cd ${{ env.PROJECT_DIR }}
+          flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: |
+          cd ${{ env.PROJECT_DIR }}
+          flutter build apk --release
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: |
+            **/build/app/outputs/flutter-apk/app-release.apk
+            **/build/app/outputs/apk/release/app-release.apk
